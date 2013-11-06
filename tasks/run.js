@@ -29,8 +29,6 @@ module.exports = function(grunt) {
       ready: 1000
     });
 
-    console.log(opts);
-
     var proc = child_process.spawn(
       self.data.cmd || 'node',
       self.data.args,
@@ -39,12 +37,13 @@ module.exports = function(grunt) {
       }
     );
 
-    proc.stdout.on('data', grunt.log.write);
-
     var done = this.async();
     var timeoutId = null;
 
-    proc.stderr.on('data', function (chunk) {
+    function onStdout(chunk) {
+      grunt.log.write(chunk);
+    }
+    function onStderr(chunk) {
       grunt.log.error(chunk);
       if (opts.failOnError) {
         proc.kill();
@@ -54,7 +53,9 @@ module.exports = function(grunt) {
           timeoutId = null;
         }
       }
-    });
+    }
+    proc.stdout.on('data', onStdout);
+    proc.stderr.on('data', onStderr);
 
     proc.on('close', function () {
       var i;
@@ -66,6 +67,8 @@ module.exports = function(grunt) {
 
     if (opts.wait) {
       proc.on('close', function (exitCode) {
+        proc.stdout.removeListener('data', onStdout);
+        proc.stderr.removeListener('data', onStderr);
         done(!exitCode);
       });
     } else {
@@ -73,8 +76,9 @@ module.exports = function(grunt) {
       grunt.config.set('wait.' + name + '._pid', proc.pid);
       runningProcs.push(proc);
       if (opts.ready instanceof RegExp) {
-        process.stdout.on('data', function (chunk) {
+        proc.stdout.on('data', function checkForReady(chunk) {
           if (opts.ready.test(chunk)) {
+            proc.stdout.removeListener('data', checkForReady);
             done();
           }
         });
@@ -98,7 +102,7 @@ module.exports = function(grunt) {
     var pid = this.data._pid;
     var proc = _.find(runningProcs, { pid: pid });
     if (proc) {
-      proc.on('close', this.async());
+      proc.once('close', this.async());
     } else {
       grunt.log.writeLn('process already closed');
     }
