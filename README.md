@@ -58,7 +58,7 @@ Default value: 1000
 
 If we are **not** waiting for the process to complete, then how do we know the process is ready?
 
-A RegExp will test the lines from StdOut and complete the task once the test succeeds, a Number will just set a timeout, and false will consider it ready as soon as it's started
+A RegExp will test the lines from stdout and complete the task once the test succeeds, a Number will just set a timeout, and anything else will complete the task on nextTick
 
 #### options.failOnError
 Type: `Boolean`
@@ -69,7 +69,7 @@ If the process outputs anything on stderr then the process will be killed. If wa
 ### Usage Examples
 
 #### Default
-Want to just run some command line tool? With this config calling `grunt run:tool` will run that tool, and once it exits use an exit code of 0 to mean success and any other to mean failure.
+Want to just run some command line tool? With this config calling `grunt run:tool` will run that tool.
 
 ```js
 grunt.initConfig({
@@ -84,7 +84,7 @@ grunt.loadNpmTasks('grunt-run');
 ```
 
 #### `wait`ing
-In this example, we are starting a small server that will serve our mocha tests to a browser. We will then open that page in the browser and tell grunt to wait until the process is exited, which probablt won't happen so the process will just run until the user kills grunt with `ctrl + c`.
+In this example, we are starting a small server that will serve our mocha tests to a browser. We will then open that page in the browser and tell grunt to wait until the process is exited, which probably won't happen so the process will just run until the user ends the process manually.
 
 ```js
 grunt.initConfig({
@@ -95,13 +95,13 @@ grunt.initConfig({
       },
       // cmd: "node", // but that's the default
       args: [
-        'text/integration_server.js'
+        'test/integration_server.js'
       ]
     }
   },
+  // https://github.com/jsoverson/grunt-open
   open: {
     integration_suite: {
-      // https://github.com/jsoverson/grunt-open
       path: 'http://localhost:8888',
       app: 'Google Chrome'
     }
@@ -130,13 +130,13 @@ grunt.initConfig({
         wait: false
       },
       args: [
-        'text/integration_server.js'
+        'test/integration_server.js'
       ]
     }
   },
+  // https://github.com/kmiyashiro/grunt-mocha
   mocha: {
     integration_suite: {
-      // https://github.com/kmiyashiro/grunt-mocha
       urls: 'http://localhost:8888',
       app: 'Google Chrome'
     }
@@ -154,4 +154,4 @@ grunt.registerTask('test', [
 ```
 
 ## Contributing
-In lieu of a formal styleguide, take care to maintain the existing coding style. Lint and test your code using [Grunt](http://gruntjs.com/).
+Please lint and test your code with the included jshint config, or just run `grunt`.
