@@ -25,7 +25,7 @@ module.exports = function(grunt) {
     var name = this.target;
     var opts = this.options({
       wait: true,
-      failOnError: true,
+      failOnError: false,
       ready: 1000
     });
 
