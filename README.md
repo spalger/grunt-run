@@ -41,7 +41,9 @@ grunt.initConfig({
 
 ### Src/files/etc
 
-Since this task doesn't operate on "files" it also doesn't use the standard src/files options. Instead, specify a `cmd` and `args` key to your test's config (see examples). `cmd` defaults to `"node"`.
+Since this task doesn't operate on "files" it also doesn't use the standard src/files options. Instead, specify a `cmd:` and `args:` key to your test's config (see examples). `cmd:` defaults to `"node"`.
+
+If you would like to specify your command as a single string, usefull for specifying multiple commands in one task, use the `exec:` key
 
 
 ### Options
@@ -72,6 +74,12 @@ Default value: `false`
 
 If the process outputs anything on stderr then the process will be killed. If wait is `true` it will cause the task to fail as well.
 
+#### options.passArgs
+Type: `Array`
+Default value: `[]`
+
+Before running the command, look for these options using [grunt.option()](http://gruntjs.com/api/grunt.option#grunt.option). The syntax supported for specifying command line args in grunt is `--option1=myValue`.
+
 ### Usage Examples
 
 #### Default
@@ -81,7 +89,22 @@ Want to just run some command line tool? With this config calling `grunt run:too
 grunt.initConfig({
   run: {
     tool: {
-      cmd: 'some-bash-script',
+      cmd: './some-bash-script',
+    }
+  }
+});
+
+grunt.loadNpmTasks('grunt-run');
+```
+
+#### Multiple scripts
+Want to run a few commands. With this config calling `grunt run:commands` will run them.
+
+```js
+grunt.initConfig({
+  run: {
+    commands: {
+      exec: './some-bash-script && ./some-other-script',
     }
   }
 });
@@ -157,6 +180,31 @@ grunt.registerTask('test', [
   'mocha:integration_suite',
   'stop:integration_server'
 ]);
+```
+
+#### passing args
+When you execute a command, sometimes you want to modify the script form the call to grunt.
+
+```js
+grunt.initConfig({
+  run: {
+    server: {
+      args: ['./server.js'],
+      options: {
+        passArgs: [
+          'port'
+        ]
+      }
+    }
+  }
+})
+```
+
+Then you can specify a `--port` option when calling grunt and it will be sent to the other process.
+
+```
+$ grunt run:server --port=8888
+# calls "node ./server.js --port=8888"
 ```
 
 ## Contributing

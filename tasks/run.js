@@ -5,14 +5,18 @@
  * Copyright (c) 2013 Spencer Alger
  * Licensed under the MIT license.
  */
+module.exports = makeTask;
+function makeTask(grunt) {
 
-'use strict';
-
-module.exports = function(grunt) {
-
-  var runningProcs = [];
+  var Readable = require('stream').Readable;
+  var EventEmitter = require('events').EventEmitter;
   var _ = require('lodash');
+  var util = require('util');
   var child_process = require('child_process');
+
+  var shouldEscapeRE = / |"|'|\$|&|\\/;
+  var dangerArgsRE = /"|\$|\\/g;
+  var runningProcs = [];
 
   process.on('exit', function () {
     _.each(runningProcs, function (proc) {
@@ -27,16 +31,49 @@ module.exports = function(grunt) {
       wait: true,
       failOnError: false,
       ready: 1000,
-      cwd: process.cwd()
+      cwd: process.cwd(),
+      passArgs: []
     });
 
-    var proc = child_process.spawn(
-      self.data.cmd || 'node',
-      self.data.args,
-      {
-        stdio: ['ignore', 'pipe', 'pipe']
+    var cmd = this.data.cmd | 'node';
+    var args = this.data.args || [];
+    var additionalArgs = [];
+
+    opts.passArgs.map(function (arg) {
+      var val = grunt.option(arg);
+
+      if (val !== void 0) {
+        if (shouldEscapeRE.test(arg)) {
+          val = '"' + arg.replace(dangerArgsRE, function (match) {
+            return '\\' + match;
+          }) + '"';
+        }
+
+        additionalArgs.push('--' + arg + '=' + val);
       }
-    );
+    });
+
+    if (this.data.exec) {
+      if (process.platform === 'win32') {
+        cmd = 'cmd';
+        args = ['/c', this.data.exec];
+      } else {
+        cmd = 'sh';
+        args = ['-c', this.data.exec];
+      }
+
+      if (additionalArgs.length) {
+        args[1]+= ' ' + additionalArgs.join(' ');
+      }
+
+    } else {
+      args = args.concat(additionalArgs);
+    }
+
+    grunt.verbose.writeln('running', cmd, 'with args', args);
+    var proc = child_process.spawn(cmd, args, {
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
 
     var done = this.async();
     var timeoutId = null;
@@ -57,6 +94,10 @@ module.exports = function(grunt) {
     }
     proc.stdout.on('data', onStdout);
     proc.stderr.on('data', onStderr);
+
+    proc.on('error', function (err) {
+      grunt.log.error(err);
+    });
 
     proc.on('close', function () {
       var i;
@@ -105,8 +146,8 @@ module.exports = function(grunt) {
     if (proc) {
       proc.once('close', this.async());
     } else {
-      grunt.log.writeLn('process already closed');
+      grunt.log.writeln('process already closed');
     }
   });
 
-};
+}
