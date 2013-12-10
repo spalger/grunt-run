@@ -52,6 +52,12 @@ Default value: `true`
 
 Should this task wait until the script exits before finishing?
 
+#### options.cwd
+Type: `String`
+Default value: `process.cwd()`
+
+Should we change the working directory for the command runs in?
+
 #### options.ready
 Type: `RegExp`, `Number`, or `false`
 Default value: 1000

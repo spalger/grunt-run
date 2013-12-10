@@ -26,7 +26,8 @@ module.exports = function(grunt) {
     var opts = this.options({
       wait: true,
       failOnError: false,
-      ready: 1000
+      ready: 1000,
+      cwd: process.cwd()
     });
 
     var proc = child_process.spawn(
