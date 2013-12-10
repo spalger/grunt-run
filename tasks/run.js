@@ -35,7 +35,7 @@ function makeTask(grunt) {
       passArgs: []
     });
 
-    var cmd = this.data.cmd | 'node';
+    var cmd = this.data.cmd || 'node';
     var args = this.data.args || [];
     var additionalArgs = [];
 
