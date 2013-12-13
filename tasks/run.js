@@ -38,6 +38,9 @@ function makeTask(grunt) {
     var cmd = this.data.cmd || 'node';
     var args = this.data.args || [];
     var additionalArgs = [];
+    var options = {
+      stdio: ['ignore', 'pipe', 'pipe']
+    };
 
     opts.passArgs.map(function (arg) {
       var val = grunt.option(arg);
@@ -54,26 +57,26 @@ function makeTask(grunt) {
     });
 
     if (this.data.exec) {
+      // logic is from node's cp.exec method, adapted to benefit from
+      // streaming io
       if (process.platform === 'win32') {
-        cmd = 'cmd';
-        args = ['/c', this.data.exec];
+        cmd = 'cmd.exe';
+        args = ['/s', '/c', '"' + this.data.exec + '"'];
+        options.windowsVerbatimArguments = true;
       } else {
-        cmd = 'sh';
+        cmd = '/bin/sh';
         args = ['-c', this.data.exec];
       }
 
       if (additionalArgs.length) {
         args[1]+= ' ' + additionalArgs.join(' ');
       }
-
     } else {
       args = args.concat(additionalArgs);
     }
 
     grunt.verbose.writeln('running', cmd, 'with args', args);
-    var proc = child_process.spawn(cmd, args, {
-      stdio: ['ignore', 'pipe', 'pipe']
-    });
+    var proc = child_process.spawn(cmd, args, options);
 
     var done = this.async();
     var timeoutId = null;
