@@ -39,7 +39,7 @@ function makeTask(grunt) {
     var args = this.data.args || [];
     var additionalArgs = [];
     var options = {
-      stdio: ['ignore', 'pipe', 'pipe']
+      stdio: ['ignore', 'inherit', 'pipe']
     };
 
     opts.passArgs.map(function (arg) {
@@ -81,11 +81,8 @@ function makeTask(grunt) {
     var done = this.async();
     var timeoutId = null;
 
-    function onStdout(chunk) {
-      grunt.log.write(chunk);
-    }
     function onStderr(chunk) {
-      grunt.log.error(chunk);
+      process.stderr.write(chunk);
       if (opts.failOnError) {
         proc.kill();
         done(new Error('Error output received'));
@@ -95,7 +92,6 @@ function makeTask(grunt) {
         }
       }
     }
-    proc.stdout.on('data', onStdout);
     proc.stderr.on('data', onStderr);
 
     proc.on('error', function (err) {
@@ -112,7 +108,6 @@ function makeTask(grunt) {
 
     if (opts.wait) {
       proc.on('close', function (exitCode) {
-        proc.stdout.removeListener('data', onStdout);
         proc.stderr.removeListener('data', onStderr);
         done(!exitCode);
       });
