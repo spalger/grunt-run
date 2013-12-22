@@ -39,7 +39,7 @@ function makeTask(grunt) {
     var args = this.data.args || [];
     var additionalArgs = [];
     var options = {
-      stdio: ['ignore', 'inherit', 'pipe']
+      stdio: ['ignore', process.stdout, 'pipe']
     };
 
     opts.passArgs.map(function (arg) {
