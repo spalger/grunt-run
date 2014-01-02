@@ -39,6 +39,7 @@ function makeTask(grunt) {
     var args = this.data.args || [];
     var additionalArgs = [];
     var options = {
+      cwd: opts.cwd,
       stdio: ['ignore', process.stdout, 'pipe']
     };
 
