@@ -24,6 +24,9 @@
   "engines": {
     "node": ">= 0.8.0"
   },
+  "dependencies": {
+    "lodash": "~2.4.1"
+  },
   "devDependencies": {
     "grunt-contrib-jshint": "~0.7",
     "grunt": "~0.4"

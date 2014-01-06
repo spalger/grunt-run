@@ -40,7 +40,7 @@ function makeTask(grunt) {
     var additionalArgs = [];
     var options = {
       cwd: opts.cwd,
-      stdio: ['ignore', process.stdout, 'pipe']
+      stdio: ['ignore', 'pipe', 'pipe']
     };
 
     opts.passArgs.map(function (arg) {
