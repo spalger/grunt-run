@@ -1,7 +1,7 @@
 {
   "name": "grunt-run",
   "description": "Invite external commands into your grunt process with three tasks `run`, `wait` and `stop`.",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "homepage": "https://github.com/spenceralger/grunt-run",
   "author": {
     "name": "Spencer Alger",
