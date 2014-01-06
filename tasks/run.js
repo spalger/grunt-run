@@ -82,6 +82,10 @@ function makeTask(grunt) {
     var done = this.async();
     var timeoutId = null;
 
+    // handle stdout
+    proc.stdout.pipe(process.stdout);
+
+    // handle stderr
     function onStderr(chunk) {
       process.stderr.write(chunk);
       if (opts.failOnError) {
