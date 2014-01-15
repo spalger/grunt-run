@@ -7,9 +7,6 @@
  */
 module.exports = makeTask;
 function makeTask(grunt) {
-
-  var Readable = require('stream').Readable;
-  var EventEmitter = require('events').EventEmitter;
   var _ = require('lodash');
   var util = require('util');
   var child_process = require('child_process');
