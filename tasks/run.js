@@ -30,6 +30,7 @@ function makeTask(grunt) {
     var opts = this.options({
       wait: true,
       failOnError: false,
+      quite: false,
       ready: 1000,
       cwd: process.cwd(),
       passArgs: []
@@ -83,11 +84,17 @@ function makeTask(grunt) {
     var timeoutId = null;
 
     // handle stdout
-    proc.stdout.pipe(process.stdout);
+    if (opts.quiet) {
+      proc.stdout.resume();
+    } else {
+      proc.stdout.pipe(process.stdout);
+    }
 
     // handle stderr
     function onStderr(chunk) {
-      process.stderr.write(chunk);
+      if (opts.quiet !== Infinity) {
+        process.stderr.write(chunk);
+      }
       if (opts.failOnError) {
         proc.kill();
         done(new Error('Error output received'));
@@ -114,6 +121,9 @@ function makeTask(grunt) {
     if (opts.wait) {
       proc.on('close', function (exitCode) {
         proc.stderr.removeListener('data', onStderr);
+        if (!opts.quiet) {
+          proc.stdout.unpipe(process.stdout);
+        }
         done(!exitCode);
       });
     } else {
@@ -138,7 +148,7 @@ function makeTask(grunt) {
   grunt.task.registerMultiTask('stop', 'stop a process started with "run" ' +
     '(only works for tasks that use wait:false)', function () {
     var pid = this.data._pid;
-    child_process.kill(pid);
+    process.kill(pid);
   });
 
   grunt.task.registerMultiTask('wait', 'wait for a process started with "run" to close ' +

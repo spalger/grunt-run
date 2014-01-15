@@ -25,7 +25,8 @@
     "node": ">= 0.8.0"
   },
   "dependencies": {
-    "lodash": "~2.4.1"
+    "lodash": "~2.4.1",
+    "event-stream": "~3.1.0"
   },
   "devDependencies": {
     "grunt-contrib-jshint": "~0.7",

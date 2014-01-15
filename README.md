@@ -60,6 +60,12 @@ Default value: `process.cwd()`
 
 Should we change the working directory for the command runs in?
 
+#### options.quiet
+Type: `Boolean`, `Infinity`
+Default value: `false`
+
+Set to `true` to ignore stdout from the process, `Infinity` to ignore stderr as well (opts.failOnError will still work)
+
 #### options.ready
 Type: `RegExp`, `Number`, or `false`
 Default value: 1000
