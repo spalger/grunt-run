@@ -124,8 +124,10 @@ function makeTask(grunt) {
         done(!exitCode);
       });
     } else {
-      grunt.config.set('stop.' + name + '._pid', proc.pid);
-      grunt.config.set('wait.' + name + '._pid', proc.pid);
+      // config.set splits the first param on periods, so we need to escape the task name before setting.
+      var escapedName = name.replace(/\./, '\\.');
+      grunt.config.set('stop.' + escapedName + '._pid', proc.pid);
+      grunt.config.set('wait.' + escapedName + '._pid', proc.pid);
       runningProcs.push(proc);
       if (opts.ready instanceof RegExp) {
         proc.stdout.on('data', function checkForReady(chunk) {
