@@ -97,7 +97,6 @@ function makeTask(grunt) {
     grunt.verbose.writeln('running', cmd, 'with args', args);
     var proc = child_process.spawn(cmd, args, options);
     savePid(name, proc.pid);
-    grunt.log.ok(name + ' started');
 
     var done = this.async();
     var timeoutId = null;
@@ -147,6 +146,7 @@ function makeTask(grunt) {
         done(!exitCode);
       });
     } else {
+      grunt.log.ok(name + ' started');
       runningProcs.push(proc);
       if (opts.ready instanceof RegExp) {
         proc.stdout.on('data', function checkForReady(chunk) {
