@@ -21,9 +21,29 @@ function makeTask(grunt) {
     });
   });
 
+  function getPid(name) {
+    return grunt.config.get('stop.' + grunt.config.escape(name) + '._pid');
+  }
+
+  function savePid(name, pid) {
+    grunt.config.set('stop.' + grunt.config.escape(name) + '._pid', pid);
+    grunt.config.set('wait.' + grunt.config.escape(name) + '._pid', pid);
+  }
+
+  function clearPid(name) {
+    grunt.config.set('stop.' + grunt.config.escape(name) + '._pid', null);
+    grunt.config.set('wait.' + grunt.config.escape(name) + '._pid', null);
+  }
+
   grunt.task.registerMultiTask('run', 'used to start external processes (like servers)', function () {
     var self = this;
     var name = this.target;
+
+    if (getPid(name)) {
+      grunt.log.warn(name + ' is already running');
+      return;
+    }
+
     var opts = this.options({
       wait: true,
       failOnError: false,
@@ -76,6 +96,8 @@ function makeTask(grunt) {
 
     grunt.verbose.writeln('running', cmd, 'with args', args);
     var proc = child_process.spawn(cmd, args, options);
+    savePid(name, proc.pid);
+    grunt.log.ok(name + ' started');
 
     var done = this.async();
     var timeoutId = null;
@@ -117,6 +139,7 @@ function makeTask(grunt) {
 
     if (opts.wait) {
       proc.on('close', function (exitCode) {
+        clearPid(name);
         proc.stderr.removeListener('data', onStderr);
         if (!opts.quiet) {
           proc.stdout.unpipe(process.stdout);
@@ -124,10 +147,6 @@ function makeTask(grunt) {
         done(!exitCode);
       });
     } else {
-      // config.set splits the first param on periods, so we need to escape the task name before setting.
-      var escapedName = name.replace(/\./, '\\.');
-      grunt.config.set('stop.' + escapedName + '._pid', proc.pid);
-      grunt.config.set('wait.' + escapedName + '._pid', proc.pid);
       runningProcs.push(proc);
       if (opts.ready instanceof RegExp) {
         proc.stdout.on('data', function checkForReady(chunk) {
@@ -146,8 +165,14 @@ function makeTask(grunt) {
 
   grunt.task.registerMultiTask('stop', 'stop a process started with "run" ' +
     '(only works for tasks that use wait:false)', function () {
+
     var pid = this.data._pid;
-    process.kill(pid);
+    var proc = _.find(runningProcs, { pid: pid });
+    if (proc) {
+      proc.kill();
+    } else {
+      grunt.log.warn(this.target + ' (' + pid + ') is already stopped.');
+    }
   });
 
   grunt.task.registerMultiTask('wait', 'wait for a process started with "run" to close ' +
@@ -158,7 +183,7 @@ function makeTask(grunt) {
     if (proc) {
       proc.once('close', this.async());
     } else {
-      grunt.log.writeln('process already closed');
+      grunt.log.writeln(this.target + ' (' + pid + ') is already stopped.');
     }
   });
 
