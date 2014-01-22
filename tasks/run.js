@@ -38,28 +38,32 @@ function makeTask(grunt) {
   grunt.task.registerMultiTask('run', 'used to start external processes (like servers)', function () {
     var self = this;
     var name = this.target;
-
-    if (getPid(name)) {
-      grunt.log.warn(name + ' is already running');
-      return;
-    }
-
+    var cmd = this.data.cmd || 'node';
+    var args = this.data.args || [];
+    var additionalArgs = [];
     var opts = this.options({
       wait: true,
       failOnError: false,
       quite: false,
       ready: 1000,
       cwd: process.cwd(),
-      passArgs: []
+      passArgs: [],
+      itterable: false
     });
-
-    var cmd = this.data.cmd || 'node';
-    var args = this.data.args || [];
-    var additionalArgs = [];
-    var options = {
+    var spawnOpts = {
       cwd: opts.cwd,
       stdio: ['ignore', 'pipe', 'pipe']
     };
+
+    if (getPid(name)) {
+      grunt.log.warn(name + ' is already running');
+      return;
+    }
+
+    if (!opts.itterable && _.find(process.argv, 'run')) {
+      grunt.log.warn('Skipping run:' + this.target + ' since it not itterable. Call it directly or from another task.');
+      return;
+    }
 
     opts.passArgs.map(function (arg) {
       var val = grunt.option(arg);
@@ -81,7 +85,7 @@ function makeTask(grunt) {
       if (process.platform === 'win32') {
         cmd = 'cmd.exe';
         args = ['/s', '/c', '"' + this.data.exec + '"'];
-        options.windowsVerbatimArguments = true;
+        spawnOpts.windowsVerbatimArguments = true;
       } else {
         cmd = '/bin/sh';
         args = ['-c', this.data.exec];
@@ -95,7 +99,7 @@ function makeTask(grunt) {
     }
 
     grunt.verbose.writeln('running', cmd, 'with args', args);
-    var proc = child_process.spawn(cmd, args, options);
+    var proc = child_process.spawn(cmd, args, spawnOpts);
     savePid(name, proc.pid);
 
     var done = this.async();
