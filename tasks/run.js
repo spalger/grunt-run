@@ -60,7 +60,7 @@ function makeTask(grunt) {
       return;
     }
 
-    if (!opts.itterable && _.find(process.argv, 'run')) {
+    if (!opts.itterable && _.contains(process.argv, 'run')) {
       grunt.log.warn('Skipping run:' + this.target + ' since it not itterable. Call it directly or from another task.');
       return;
     }
