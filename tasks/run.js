@@ -35,7 +35,7 @@ function makeTask(grunt) {
     grunt.config.set('wait.' + grunt.config.escape(name) + '._pid', null);
   }
 
-  grunt.task.registerMultiTask('run', 'used to start external processes (like servers)', function () {
+  grunt.task.registerMultiTask('run', 'used to start external processes (like servers)', function (keepalive) {
     var self = this;
     var name = this.target;
     var cmd = this.data.cmd || 'node';
@@ -50,6 +50,12 @@ function makeTask(grunt) {
       passArgs: [],
       itterable: false
     });
+
+    if (keepalive === 'keepalive') {
+      // override the wait setting
+      opts.wait = true;
+    }
+
     var spawnOpts = {
       cwd: opts.cwd,
       stdio: ['ignore', 'pipe', 'pipe']
