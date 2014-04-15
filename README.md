@@ -52,7 +52,16 @@ If you would like to specify your command as a single string, usefull for specif
 Type: `Boolean`
 Default value: `true`
 
-Should this task wait until the script exits before finishing?
+Should this task wait until the script exits before finishing? If you set this to false because you want to start a service of some sort before running another task, you can override this setting by passing the "keepalive" argument to the task call.
+
+Example:
+```sh
+# start a testing instance of Elasticsearch and run some tests, `wait: false`
+$ grunt run:es mocha:test
+
+# override `wait` to keep Elasticsearch running
+$ grunt run:es:keepalive
+```
 
 #### options.cwd
 Type: `String`
