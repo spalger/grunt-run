@@ -5,6 +5,9 @@
  * Copyright (c) 2013 Spencer Alger
  * Licensed under the MIT license.
  */
+
+ /* jshint -W083 */
+
 module.exports = makeTask;
 function makeTask(grunt) {
   var _ = require('lodash');
@@ -158,18 +161,26 @@ function makeTask(grunt) {
     } else {
       grunt.log.ok(name + ' started');
       runningProcs.push(proc);
-      if (opts.ready instanceof RegExp) {
-        proc.stdout.on('data', function checkForReady(chunk) {
-          if (opts.ready.test(chunk)) {
-            proc.stdout.removeListener('data', checkForReady);
-            done();
-          }
-        });
-      } else if (opts.ready) {
-        timeoutId = setTimeout(done, opts.ready);
-      } else {
-        process.nextTick(done);
+      var readyOpt = opts.ready;
+      if (!Array.isArray(opts.ready)) {
+        readyOpt = [readyOpt];
       }
+      for(var i = 0, l = readyOpt.length; i < l; i++) {
+        if (readyOpt[i] instanceof RegExp) {
+          this.opt = readyOpt[i];
+          proc.stdout.on('data', function checkForReady(chunk) {
+            if (this.opt.test(chunk)) {
+              proc.stdout.removeListener('data', checkForReady);
+              done();
+            }
+          }.bind(this));
+        } else if (readyOpt[i]) {
+          timeoutId = setTimeout(done, opts.ready);
+        } else {
+          process.nextTick(done);
+        }
+      }
+
     }
   });
 
@@ -196,5 +207,4 @@ function makeTask(grunt) {
       grunt.log.writeln(this.target + ' (' + pid + ') is already stopped.');
     }
   });
-
 }
