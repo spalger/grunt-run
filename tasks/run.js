@@ -177,9 +177,11 @@ function makeTask(grunt) {
     '(only works for tasks that use wait:false)', function () {
 
     var pid = this.data._pid;
+    var name = this.target;
     var proc = _.find(runningProcs, { pid: pid });
     if (proc) {
       proc.kill();
+      clearPid(name);
     } else {
       grunt.log.warn(this.target + ' (' + pid + ') is already stopped.');
     }
