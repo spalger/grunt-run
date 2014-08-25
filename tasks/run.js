@@ -177,6 +177,7 @@ function makeTask(grunt) {
 
   grunt.task.registerMultiTask('stop', 'stop a process started with "run" ' +
     '(only works for tasks that use wait:false)', function () {
+      
     var pid = this.data._pid;
     var name = this.target;
     var proc = _.find(runningProcs, { pid: pid });
