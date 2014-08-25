@@ -11,9 +11,21 @@ function makeTask(grunt) {
   var util = require('util');
   var child_process = require('child_process');
 
-  var shouldEscapeRE = / |"|'|\$|&|\\/;
-  var dangerArgsRE = /"|\$|\\/g;
+  var SHOULD_ESCAPE_RE = / |"|'|\$|&|\\/;
+  var DANGER_ARGS_RE = /"|\$|\\/g;
+  var PID_LOG_FILE = __dirname + '/pid.log';
+
   var runningProcs = [];
+  var __localPidLog = '{}';
+
+  if (!grunt.file.exists(PID_LOG_FILE)) {
+    grunt.file.write(PID_LOG_FILE, '{}');
+  }
+
+  // when other globalProcs exist, we should be able to stop them
+  _.forOwn(getPidLog(true), function (pid, name, log) {
+    savePid(name, true, pid);
+  });
 
   process.on('exit', function () {
     _.each(runningProcs, function (proc) {
@@ -21,18 +33,32 @@ function makeTask(grunt) {
     });
   });
 
-  function getPid(name) {
-    return grunt.config.get('stop.' + grunt.config.escape(name) + '._pid');
+  function getPidLog(global) {
+    return JSON.parse(global ? grunt.file.read(PID_LOG_FILE) : __localPidLog);
   }
 
-  function savePid(name, pid) {
-    grunt.config.set('stop.' + grunt.config.escape(name) + '._pid', pid);
-    grunt.config.set('wait.' + grunt.config.escape(name) + '._pid', pid);
+  function savePidLog(log, global) {
+    if (global) {
+      grunt.file.write(PID_LOG_FILE, JSON.stringify(log));
+    } else {
+      __localPidLog = JSON.stringify(log);
+    }
   }
 
-  function clearPid(name) {
-    grunt.config.set('stop.' + grunt.config.escape(name) + '._pid', null);
-    grunt.config.set('wait.' + grunt.config.escape(name) + '._pid', null);
+  function getPid(name, global) {
+    return getPidLog(global)[name];
+  }
+
+  function savePid(name, global, pid) {
+    var log = getPidLog(global);
+    log[name] = pid;
+    savePidLog(log, global);
+  }
+
+  function clearPid(name, global) {
+    var log = getPidLog(global);
+    delete log[name];
+    savePidLog(log, global);
   }
 
   grunt.task.registerMultiTask('run', 'used to start external processes (like servers)', function (keepalive) {
@@ -46,6 +72,7 @@ function makeTask(grunt) {
       failOnError: false,
       quite: false,
       ready: 1000,
+      global: true,
       cwd: process.cwd(),
       passArgs: [],
       itterable: false
@@ -61,7 +88,7 @@ function makeTask(grunt) {
       stdio: ['ignore', 'pipe', 'pipe']
     };
 
-    if (getPid(name)) {
+    if (getPid(name, opts.global)) {
       grunt.log.warn(name + ' is already running');
       return;
     }
@@ -75,8 +102,8 @@ function makeTask(grunt) {
       var val = grunt.option(arg);
 
       if (val !== void 0) {
-        if (shouldEscapeRE.test(arg)) {
-          val = '"' + arg.replace(dangerArgsRE, function (match) {
+        if (SHOULD_ESCAPE_RE.test(arg)) {
+          val = '"' + arg.replace(DANGER_ARGS_RE, function (match) {
             return '\\' + match;
           }) + '"';
         }
@@ -106,7 +133,7 @@ function makeTask(grunt) {
 
     grunt.verbose.writeln('running', cmd, 'with args', args);
     var proc = child_process.spawn(cmd, args, spawnOpts);
-    savePid(name, proc.pid);
+    savePid(name, opts.global, proc.pid);
 
     var done = this.async();
     var timeoutId = null;
@@ -148,7 +175,7 @@ function makeTask(grunt) {
 
     if (opts.wait) {
       proc.on('close', function (exitCode) {
-        clearPid(name);
+        clearPid(name, opts.global);
         proc.stderr.removeListener('data', onStderr);
         if (!opts.quiet) {
           proc.stdout.unpipe(process.stdout);
@@ -173,25 +200,43 @@ function makeTask(grunt) {
     }
   });
 
-  grunt.task.registerMultiTask('stop', 'stop a process started with "run" ' +
-    '(only works for tasks that use wait:false)', function () {
+  grunt.task.registerTask('stop', 'stop a process started with "run" ' +
+    '(only works for tasks that use wait:false)', function (name) {
 
-    var pid = this.data._pid;
-    var name = this.target;
-    var proc = _.find(runningProcs, { pid: pid });
-    if (proc) {
-      proc.kill();
-      clearPid(name);
-    } else {
+    // try local first, fallback to global
+    var global = false;
+    var pid = getPid(name, global);
+    if (!pid) {
+      global = true;
+      pid = getPid(name, global);
+    }
+
+    if (!pid) {
+      grunt.log.error('Unable to find a pid for process named ' + name);
+      return;
+    }
+
+    try {
+      process.kill(pid);
+      clearPid(name, true);
+    } catch (e) {
       grunt.log.warn(this.target + ' (' + pid + ') is already stopped.');
+      grunt.verbose.error(e);
     }
   });
 
-  grunt.task.registerMultiTask('wait', 'wait for a process started with "run" to close ' +
-    '(only works for tasks that use wait:false)', function () {
+  grunt.task.registerTask('wait', 'wait for a process started with "run" to close ' +
+    '(only works for tasks that use wait:false and global:false)', function (name) {
 
-    var pid = this.data._pid;
+    var pid = getPid(name, false);
+
+    if (!pid) {
+      grunt.log.error('unable to find a process with the name ' + name);
+      return;
+    }
+
     var proc = _.find(runningProcs, { pid: pid });
+
     if (proc) {
       proc.once('close', this.async());
     } else {
