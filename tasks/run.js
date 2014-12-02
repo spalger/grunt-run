@@ -61,6 +61,10 @@ function makeTask(grunt) {
       stdio: ['ignore', 'pipe', 'pipe']
     };
 
+    if (opts.env) {
+      spawnOpts.env = opts.env;
+    }
+
     var pid = getPid(name);
     if (pid && _.find(runningProcs, { pid: pid })) {
       grunt.log.warn(name + ' is already running');
@@ -177,7 +181,7 @@ function makeTask(grunt) {
 
   grunt.task.registerMultiTask('stop', 'stop a process started with "run" ' +
     '(only works for tasks that use wait:false)', function () {
-      
+
     var pid = this.data._pid;
     var name = this.target;
     var proc = _.find(runningProcs, { pid: pid });
@@ -187,7 +191,7 @@ function makeTask(grunt) {
       grunt.log.ok(name + ' stopped');
     } else {
       grunt.log.ok(name + ' already stopped');
-    } 
+    }
   });
 
   grunt.task.registerMultiTask('wait', 'wait for a process started with "run" to close ' +
