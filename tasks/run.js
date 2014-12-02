@@ -159,7 +159,7 @@ function makeTask(grunt) {
         if (!opts.quiet) {
           proc.stdout.unpipe(process.stdout);
         }
-        done(!exitCode);
+        done(exitCode && new Error('non-zero exit code ' + exitCode));
       });
     } else {
       grunt.log.ok(name + ' started');
