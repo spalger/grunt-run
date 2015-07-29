@@ -16,9 +16,7 @@ function makeTask(grunt) {
   var runningProcs = [];
 
   process.on('exit', function () {
-    _.each(runningProcs, function (proc) {
-      proc.kill();
-    });
+    _.invoke(runningProcs, 'kill');
   });
 
   function getPid(name) {
@@ -116,67 +114,90 @@ function makeTask(grunt) {
     var done = this.async();
     var timeoutId = null;
 
-    // handle stdout
-    if (opts.quiet) {
-      proc.stdout.resume();
-    } else {
+    // handle stdout, stderr
+    if (!opts.quiet) {
       proc.stdout.pipe(process.stdout);
+      proc.stderr.pipe(process.stderr);
+
+      proc.on('close', function () {
+        proc.stdout.unpipe(process.stdout);
+        proc.stderr.unpipe(process.stderr);
+      });
     }
 
-    // handle stderr
-    function onStderr(chunk) {
-      if (opts.quiet !== Infinity) {
-        process.stderr.write(chunk);
-      }
-      if (opts.failOnError) {
-        proc.kill();
-        done(new Error('Error output received'));
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-          timeoutId = null;
-        }
-      }
-    }
-    proc.stderr.on('data', onStderr);
-
+    // handle errors that prevent the proc from starting
     proc.on('error', function (err) {
       grunt.log.error(err);
     });
 
-    proc.on('close', function () {
-      var i;
-      if ((i = runningProcs.indexOf(proc)) !== -1) {
-        runningProcs.splice(i, 1);
-      }
-      clearPid(name);
-      grunt.log.debug('Process ' + name + ' closed.');
-    });
-
     if (opts.wait) {
-      proc.on('close', function (exitCode) {
-        clearPid(name);
-        proc.stderr.removeListener('data', onStderr);
-        if (!opts.quiet) {
-          proc.stdout.unpipe(process.stdout);
-        }
-        done(exitCode && new Error('non-zero exit code ' + exitCode));
-      });
+      waitForProc();
     } else {
-      grunt.log.ok(name + ' started');
-      runningProcs.push(proc);
+      trackBackgroundProc();
+
       if (opts.ready instanceof RegExp) {
-        proc.stdout.on('data', function checkForReady(chunk) {
-          if (opts.ready.test(chunk)) {
-            proc.stdout.removeListener('data', checkForReady);
-            done();
-          }
-        });
+        waitForReadyOutput();
       } else if (opts.ready) {
-        timeoutId = setTimeout(done, opts.ready);
+        waitForTimeout();
       } else {
-        process.nextTick(done);
+        doNotWait();
       }
     }
+
+
+    // ensure that the streams are draining if we aren't already draining them (like quiet=true)
+    proc.stdout.resume();
+    proc.stdout.resume();
+    return;
+
+    // we are waiting for the proc to close before moving on
+    function waitForProc() {
+      proc.on('close', function (exitCode) {
+        done(exitCode && new Error('non-zero exit code ' + exitCode));
+      });
+    }
+
+    // we aren't waiting for this proc to close, so setup some tracking stuff
+    function trackBackgroundProc() {
+      runningProcs.push(proc);
+      proc.on('close', function () {
+        _.pull(runningProcs, proc);
+        clearPid(name);
+        grunt.log.debug('Process ' + name + ' closed.');
+      });
+    }
+
+    // we are scanning the output for a specific regular expression
+    function waitForReadyOutput() {
+
+      function onCloseBeforeReady(exitCode) {
+        done(exitCode && new Error('non-zero exit code ' + exitCode));
+      }
+
+      function checkChunkForReady(chunk) {
+        if (!opts.ready.test(chunk)) return;
+
+        proc.removeListener('close', onCloseBeforeReady);
+        proc.stdout.removeListener('data', checkChunkForReady);
+        done();
+      }
+
+      proc.on('close', onCloseBeforeReady);
+      proc.stdout.on('data', checkChunkForReady);
+    }
+
+    function waitForTimeout() {
+      timeoutId = setTimeout(function () {
+        grunt.log.ok(name + ' started');
+        done();
+      }, opts.ready);
+    }
+
+    function doNotWait() {
+      grunt.log.ok(name + ' started');
+      done();
+    }
+
   });
 
   grunt.task.registerMultiTask('stop', 'stop a process started with "run" ' +
@@ -184,10 +205,10 @@ function makeTask(grunt) {
 
     var pid = this.data._pid;
     var name = this.target;
-    var proc = _.find(runningProcs, { pid: pid });
+    var procs = _.where(runningProcs, { pid: pid });
     clearPid(name);
-    if (proc) {
-      proc.kill();
+    if (procs.length) {
+      _.invoke(procs, 'kill');
       grunt.log.ok(name + ' stopped');
     } else {
       grunt.log.ok(name + ' already stopped');
