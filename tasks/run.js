@@ -9,6 +9,7 @@ module.exports = makeTask;
 function makeTask(grunt) {
   var _ = require('lodash');
   var util = require('util');
+  var stripAnsi = require('strip-ansi');
   var child_process = require('child_process');
 
   var shouldEscapeRE = / |"|'|\$|&|\\/;
@@ -46,7 +47,8 @@ function makeTask(grunt) {
       ready: 1000,
       cwd: process.cwd(),
       passArgs: [],
-      itterable: false
+      itterable: false,
+      readyBufferLength: 1024
     });
 
     if (keepalive === 'keepalive') {
@@ -169,14 +171,24 @@ function makeTask(grunt) {
 
     // we are scanning the output for a specific regular expression
     function waitForReadyOutput() {
-
       function onCloseBeforeReady(exitCode) {
         done(exitCode && new Error('non-zero exit code ' + exitCode));
       }
 
-      function checkChunkForReady(chunk) {
-        if (!opts.ready.test(chunk)) return;
+      var outputBuffer = '';
 
+      function checkChunkForReady(chunk) {
+        outputBuffer += chunk.toString('utf8');
+
+        // ensure the buffer doesn't grow out of control
+        if (outputBuffer.length >= opts.readyBufferLength) {
+          outputBuffer = outputBuffer.slice(outputBuffer.length - opts.readyBufferLength);
+        }
+
+        // don't strip ansi until we check, incase an ansi marker is split across chuncks.
+        if (!opts.ready.test(stripAnsi(outputBuffer))) return;
+
+        outputBuffer = '';
         proc.removeListener('close', onCloseBeforeReady);
         proc.stdout.removeListener('data', checkChunkForReady);
         done();
