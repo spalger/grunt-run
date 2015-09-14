@@ -191,11 +191,13 @@ function makeTask(grunt) {
         outputBuffer = '';
         proc.removeListener('close', onCloseBeforeReady);
         proc.stdout.removeListener('data', checkChunkForReady);
+        proc.stderr.removeListener('data', checkChunkForReady);
         done();
       }
 
       proc.on('close', onCloseBeforeReady);
       proc.stdout.on('data', checkChunkForReady);
+      proc.stderr.on('data', checkChunkForReady);
     }
 
     function waitForTimeout() {
