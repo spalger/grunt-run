@@ -81,7 +81,7 @@ Default value: 1000
 
 If we are **not** waiting for the process to complete, then how do we know the process is ready?
 
-A RegExp will test the lines from stdout and complete the task once the test succeeds, a Number will just set a timeout, and anything else will complete the task on nextTick
+A RegExp will test the lines from stdout and stderr and complete the task once the test succeeds, a Number will just set a timeout, and anything else will complete the task on nextTick
 
 #### options.failOnError
 Type: `Boolean`
