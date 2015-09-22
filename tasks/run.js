@@ -148,8 +148,12 @@ function makeTask(grunt) {
 
 
     // ensure that the streams are draining if we aren't already draining them (like quiet=true)
-    proc.stdout.resume();
-    proc.stdout.resume();
+    try {
+      proc.stdout.resume();
+      proc.stderr.resume();
+    } catch(e){
+      //node versions > 0.8 start streams in flow mode so resume will throw an error
+    }
     return;
 
     // we are waiting for the proc to close before moving on
