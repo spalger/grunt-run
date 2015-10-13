@@ -125,7 +125,11 @@ function makeTask(grunt) {
       }
 
       if (additionalArgs.length) {
-        args[1]+= ' ' + additionalArgs.join(' ');
+        if(process.platform === 'win32') {
+          args[2]+= ' ' + additionalArgs.join(' ');
+        } else {
+          args[1]+= ' ' + additionalArgs.join(' ');
+        }
       }
     } else {
       args = args.concat(additionalArgs);
