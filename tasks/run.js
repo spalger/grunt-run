@@ -171,9 +171,12 @@ function makeTask(grunt) {
     function trackBackgroundProc() {
       runningProcs.push(proc);
       proc.on('close', function () {
-        _.pull(runningProcs, proc);
-        clearPid(name);
-        grunt.log.debug('Process ' + name + ' closed.');
+        // only clear pid if process is still in the list
+        if (runningProcs.indexOf(proc) !== -1) {
+          _.pull(runningProcs, proc);
+          clearPid(name);
+          grunt.log.debug('Process ' + name + ' closed.');
+        }
       });
     }
 
@@ -230,6 +233,11 @@ function makeTask(grunt) {
     var procs = _.where(runningProcs, { pid: pid });
     clearPid(name);
     if (procs.length) {
+      // remove process from running list so pid doesn't get
+      // cleared by close event in case the process runs again shortly
+      procs.forEach(function(proc) {
+        _.pull(runningProcs, proc);
+      });
       _.invoke(procs, 'kill');
       grunt.log.ok(name + ' stopped');
     } else {
