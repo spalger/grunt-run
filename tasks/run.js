@@ -230,6 +230,16 @@ function makeTask(grunt) {
     var procs = _.where(runningProcs, { pid: pid });
     clearPid(name);
     if (procs.length) {
+      var done = this.async();
+      var counter = procs.length;
+      function closeHandler() {
+        if (--counter === 0) {
+          done();
+        }
+      }
+      procs.forEach(function(proc) {
+        proc.once('close', closeHandler);
+      });
       _.invoke(procs, 'kill');
       grunt.log.ok(name + ' stopped');
     } else {
