@@ -234,6 +234,7 @@ function makeTask(grunt) {
       var counter = procs.length;
       function closeHandler() {
         if (--counter === 0) {
+          grunt.log.ok(name + ' stopped');
           done();
         }
       }
@@ -241,7 +242,6 @@ function makeTask(grunt) {
         proc.once('close', closeHandler);
       });
       _.invoke(procs, 'kill');
-      grunt.log.ok(name + ' stopped');
     } else {
       grunt.log.ok(name + ' already stopped');
     }
