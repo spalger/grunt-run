@@ -43,7 +43,7 @@ grunt.initConfig({
 
 Since this task doesn't operate on "files" it also doesn't use the standard src/files options. Instead, specify a `cmd:` and `args:` key to your test's config (see examples). `cmd:` defaults to `"node"`.
 
-If you would like to specify your command as a single string, usefull for specifying multiple commands in one task, use the `exec:` key
+If you would like to specify your command as a single string, useful for specifying multiple commands in one task, use the `exec:` key
 
 
 ### Options
