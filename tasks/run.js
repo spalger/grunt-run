@@ -241,7 +241,11 @@ function makeTask(grunt) {
       procs.forEach(function(proc) {
         proc.once('close', closeHandler);
       });
-      _.invoke(procs, 'kill');
+      if(process.platform === 'win32') {
+        child_process.execSync(`taskkill /f /t /pid ${pid}`);
+      } else {
+        _.invoke(procs, 'kill');
+      }
     } else {
       grunt.log.ok(name + ' already stopped');
     }
