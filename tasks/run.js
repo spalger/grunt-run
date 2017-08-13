@@ -71,7 +71,7 @@ function makeTask(grunt) {
       return;
     }
 
-    if (!opts.itterable && _.contains(process.argv, 'run')) {
+    if (!opts.itterable && _.includes(process.argv, 'run')) {
       grunt.log.warn('Skipping run:' + this.target + ' since it not itterable. Call it directly or from another task.');
       return;
     }
@@ -227,7 +227,7 @@ function makeTask(grunt) {
 
     var pid = this.data._pid;
     var name = this.target;
-    var procs = _.where(runningProcs, { pid: pid });
+    var procs = _.filter(runningProcs, { pid: pid });
     clearPid(name);
     if (procs.length) {
       var done = this.async();
