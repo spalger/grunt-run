@@ -2,26 +2,26 @@
   "name": "grunt-run",
   "description": "Invite external commands into your grunt process with three tasks `run`, `wait` and `stop`.",
   "version": "0.7.0",
-  "homepage": "https://github.com/spenceralger/grunt-run",
+  "homepage": "https://github.com/spalger/grunt-run",
   "author": {
     "name": "Spencer Alger",
-    "email": "spencer@spenceralger.com"
+    "email": "spencer@spalger.com"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/spenceralger/grunt-run.git"
+    "url": "git://github.com/spalger/grunt-run.git"
   },
   "scripts": {
     "build": "node scripts/build",
     "prepublish": "npm run build"
   },
   "bugs": {
-    "url": "https://github.com/spenceralger/grunt-run/issues"
+    "url": "https://github.com/spalger/grunt-run/issues"
   },
   "licenses": [
     {
       "type": "MIT",
-      "url": "https://github.com/spenceralger/grunt-run/blob/master/LICENSE-MIT"
+      "url": "https://github.com/spalger/grunt-run/blob/master/LICENSE-MIT"
     }
   ],
   "engines": {
