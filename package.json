@@ -28,10 +28,6 @@
     "lodash": "^4.17.4",
     "strip-ansi": "^3.0.0"
   },
-  "devDependencies": {
-    "grunt-contrib-jshint": "~0.7",
-    "grunt": "~0.4"
-  },
   "peerDependencies": {
     "grunt": ">=0.4.0"
   },
