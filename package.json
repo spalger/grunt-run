@@ -11,6 +11,10 @@
     "type": "git",
     "url": "git://github.com/spenceralger/grunt-run.git"
   },
+  "scripts": {
+    "build": "node scripts/build",
+    "prepublish": "npm run build"
+  },
   "bugs": {
     "url": "https://github.com/spenceralger/grunt-run/issues"
   },
@@ -20,7 +24,6 @@
       "url": "https://github.com/spenceralger/grunt-run/blob/master/LICENSE-MIT"
     }
   ],
-  "main": "Gruntfile.js",
   "engines": {
     "node": ">= 0.8.0"
   },
@@ -39,12 +42,16 @@
   ],
   "devDependencies": {
     "@elastic/eslint-config-kibana": "^0.10.0",
+    "babel-core": "^6.26.0",
     "babel-eslint": "^7.2.3",
+    "babel-preset-env": "^1.6.0",
     "eslint": "^4.5.0",
     "eslint-plugin-babel": "^4.1.2",
     "eslint-plugin-import": "^2.7.0",
     "eslint-plugin-jest": "^20.0.3",
     "eslint-plugin-mocha": "^4.11.0",
-    "eslint-plugin-react": "^7.3.0"
+    "eslint-plugin-react": "^7.3.0",
+    "gulp-babel": "^7.0.0",
+    "vinyl-fs": "^2.4.4"
   }
 }

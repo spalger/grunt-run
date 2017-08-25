@@ -2,4 +2,7 @@ node_modules
 npm-debug.log
 tmp
 yarn.lock
-/tasks
+src
+/.*
+/scripts
+/*.tgz
