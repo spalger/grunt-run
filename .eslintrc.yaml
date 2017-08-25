@@ -1,0 +1,3 @@
+---
+
+extends: "@elastic/eslint-config-kibana"

@@ -7,14 +7,13 @@
  */
 module.exports = makeTask;
 function makeTask(grunt) {
-  var _ = require('lodash');
-  var util = require('util');
-  var stripAnsi = require('strip-ansi');
-  var child_process = require('child_process');
+  const _ = require('lodash');
+  const stripAnsi = require('strip-ansi');
+  const childProcess = require('child_process');
 
-  var shouldEscapeRE = / |"|'|\$|&|\\/;
-  var dangerArgsRE = /"|\$|\\/g;
-  var runningProcs = [];
+  const shouldEscapeRE = / |"|'|\$|&|\\/;
+  const dangerArgsRE = /"|\$|\\/g;
+  const runningProcs = [];
 
   process.on('exit', function () {
     _.invoke(runningProcs, 'kill');
@@ -35,12 +34,11 @@ function makeTask(grunt) {
   }
 
   grunt.task.registerMultiTask('run', 'used to start external processes (like servers)', function (keepalive) {
-    var self = this;
-    var name = this.target;
-    var cmd = this.data.cmd || 'node';
-    var args = this.data.args || [];
-    var additionalArgs = [];
-    var opts = this.options({
+    const name = this.target;
+    let cmd = this.data.cmd || 'node';
+    let args = this.data.args || [];
+    const additionalArgs = [];
+    const opts = this.options({
       wait: true,
       failOnError: false,
       quite: false,
@@ -56,7 +54,7 @@ function makeTask(grunt) {
       opts.wait = true;
     }
 
-    var spawnOpts = {
+    const spawnOpts = {
       cwd: opts.cwd,
       stdio: ['ignore', 'pipe', 'pipe']
     };
@@ -65,7 +63,7 @@ function makeTask(grunt) {
       spawnOpts.env = opts.env;
     }
 
-    var pid = getPid(name);
+    const pid = getPid(name);
     if (pid && _.find(runningProcs, { pid: pid })) {
       grunt.log.warn(name + ' is already running');
       return;
@@ -77,7 +75,7 @@ function makeTask(grunt) {
     }
 
     opts.passArgs.map(function (arg) {
-      var val = grunt.option(arg);
+      let val = grunt.option(arg);
 
       if (val !== void 0) {
         if (shouldEscapeRE.test(arg)) {
@@ -104,9 +102,9 @@ function makeTask(grunt) {
 
       if (additionalArgs.length) {
         if(process.platform === 'win32') {
-          args[2]+= ' ' + additionalArgs.join(' ');
+          args[2] += ' ' + additionalArgs.join(' ');
         } else {
-          args[1]+= ' ' + additionalArgs.join(' ');
+          args[1] += ' ' + additionalArgs.join(' ');
         }
       }
     } else {
@@ -114,11 +112,10 @@ function makeTask(grunt) {
     }
 
     grunt.verbose.writeln('running', cmd, 'with args', args);
-    var proc = child_process.spawn(cmd, args, spawnOpts);
+    const proc = childProcess.spawn(cmd, args, spawnOpts);
     savePid(name, proc.pid);
 
-    var done = this.async();
-    var timeoutId = null;
+    const done = this.async();
 
     // handle stdout, stderr
     if (!opts.quiet) {
@@ -155,7 +152,7 @@ function makeTask(grunt) {
     try {
       proc.stdout.resume();
       proc.stderr.resume();
-    } catch(e){
+    } catch(e) {
       //node versions > 0.8 start streams in flow mode so resume will throw an error
     }
     return;
@@ -183,7 +180,7 @@ function makeTask(grunt) {
         done(exitCode && new Error('non-zero exit code ' + exitCode));
       }
 
-      var outputBuffer = '';
+      let outputBuffer = '';
 
       function checkChunkForReady(chunk) {
         outputBuffer += chunk.toString('utf8');
@@ -209,7 +206,7 @@ function makeTask(grunt) {
     }
 
     function waitForTimeout() {
-      timeoutId = setTimeout(function () {
+      setTimeout(function () {
         grunt.log.ok(name + ' started');
         done();
       }, opts.ready);
@@ -225,24 +222,24 @@ function makeTask(grunt) {
   grunt.task.registerMultiTask('stop', 'stop a process started with "run" ' +
     '(only works for tasks that use wait:false)', function () {
 
-    var pid = this.data._pid;
-    var name = this.target;
-    var procs = _.filter(runningProcs, { pid: pid });
+    const pid = this.data._pid;
+    const name = this.target;
+    const procs = _.filter(runningProcs, { pid: pid });
     clearPid(name);
     if (procs.length) {
-      var done = this.async();
-      var counter = procs.length;
+      const done = this.async();
+      let counter = procs.length;
       function closeHandler() {
         if (--counter === 0) {
           grunt.log.ok(name + ' stopped');
           done();
         }
       }
-      procs.forEach(function(proc) {
+      procs.forEach(function (proc) {
         proc.once('close', closeHandler);
       });
       if(process.platform === 'win32') {
-        child_process.execSync(`taskkill /f /t /pid ${pid}`);
+        childProcess.execSync(`taskkill /f /t /pid ${pid}`);
       } else {
         _.invoke(procs, 'kill');
       }
@@ -254,8 +251,8 @@ function makeTask(grunt) {
   grunt.task.registerMultiTask('wait', 'wait for a process started with "run" to close ' +
     '(only works for tasks that use wait:false)', function () {
 
-    var pid = this.data._pid;
-    var proc = _.find(runningProcs, { pid: pid });
+    const pid = this.data._pid;
+    const proc = _.find(runningProcs, { pid: pid });
     if (proc) {
       proc.once('close', this.async());
     } else {
