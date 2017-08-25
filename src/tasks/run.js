@@ -7,7 +7,6 @@
  */
 module.exports = makeTask;
 function makeTask(grunt) {
-  const _ = require('lodash');
   const stripAnsi = require('strip-ansi');
   const childProcess = require('child_process');
 
@@ -15,9 +14,7 @@ function makeTask(grunt) {
   const dangerArgsRE = /"|\$|\\/g;
   const runningProcs = [];
 
-  process.on('exit', function () {
-    _.invoke(runningProcs, 'kill');
-  });
+  process.on('exit', () => kill(runningProcs));
 
   function getPid(name) {
     return grunt.config.get('stop.' + grunt.config.escape(name) + '._pid');
@@ -31,6 +28,37 @@ function makeTask(grunt) {
   function clearPid(name) {
     grunt.config.set('stop.' + grunt.config.escape(name) + '._pid', null);
     grunt.config.set('wait.' + grunt.config.escape(name) + '._pid', null);
+  }
+
+  function kill(procs) {
+    for (const proc of procs) {
+      proc.kill();
+    }
+  }
+
+  function getProcs(pid) {
+    return runningProcs.filter(proc => proc.pid === pid);
+  }
+
+  function remove(array, item) {
+    do {
+      const i = array.indexOf(item);
+      if (i === -1) {
+        return;
+      }
+
+      array.splice(i, 1);
+    } while(true);
+  }
+
+  function includes(array, target) {
+    for (const item of array) {
+      if (item === target) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   grunt.task.registerMultiTask('run', 'used to start external processes (like servers)', function (keepalive) {
@@ -64,12 +92,12 @@ function makeTask(grunt) {
     }
 
     const pid = getPid(name);
-    if (pid && _.find(runningProcs, { pid: pid })) {
+    if (pid && getProcs(pid).length) {
       grunt.log.warn(name + ' is already running');
       return;
     }
 
-    if (!opts.itterable && _.includes(process.argv, 'run')) {
+    if (!opts.itterable && includes(process.argv, 'run')) {
       grunt.log.warn('Skipping run:' + this.target + ' since it not itterable. Call it directly or from another task.');
       return;
     }
@@ -168,7 +196,7 @@ function makeTask(grunt) {
     function trackBackgroundProc() {
       runningProcs.push(proc);
       proc.on('close', function () {
-        _.pull(runningProcs, proc);
+        remove(runningProcs, proc);
         clearPid(name);
         grunt.log.debug('Process ' + name + ' closed.');
       });
@@ -224,7 +252,7 @@ function makeTask(grunt) {
 
     const pid = this.data._pid;
     const name = this.target;
-    const procs = _.filter(runningProcs, { pid: pid });
+    const procs = getProcs(pid);
     clearPid(name);
     if (procs.length) {
       const done = this.async();
@@ -241,7 +269,7 @@ function makeTask(grunt) {
       if(process.platform === 'win32') {
         childProcess.execSync(`taskkill /f /t /pid ${pid}`);
       } else {
-        _.invoke(procs, 'kill');
+        kill(procs);
       }
     } else {
       grunt.log.ok(name + ' already stopped');
@@ -252,7 +280,7 @@ function makeTask(grunt) {
     '(only works for tasks that use wait:false)', function () {
 
     const pid = this.data._pid;
-    const proc = _.find(runningProcs, { pid: pid });
+    const proc = getProcs(pid)[0];
     if (proc) {
       proc.once('close', this.async());
     } else {

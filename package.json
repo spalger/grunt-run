@@ -28,7 +28,6 @@
     "node": ">= 0.8.0"
   },
   "dependencies": {
-    "lodash": "^4.17.4",
     "strip-ansi": "^3.0.0"
   },
   "peerDependencies": {
