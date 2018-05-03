@@ -69,7 +69,7 @@ function makeTask(grunt) {
     const opts = this.options({
       wait: true,
       failOnError: false,
-      quite: false,
+      quiet: false,
       ready: 1000,
       cwd: process.cwd(),
       passArgs: [],
